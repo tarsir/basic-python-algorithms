@@ -19,7 +19,7 @@ class Edge:
 
 class Grid:
     """Holds the definition of a grid layout with some helper functions.
-    
+
     Attributes:
         grid_layout: list of lists, representing a 2-dimensional grid of nodes
         edges: list of edges
@@ -27,7 +27,9 @@ class Grid:
 
     def __init__(self, length, width):
         grid_row = [0] * length
-        self.grid_layout = [grid_row] * width
+        self.grid_layout = []
+        for n in range(width):
+            self.grid_layout.append(grid_row[:])
         self.edges = []
 
     def __str__(self):
@@ -44,8 +46,8 @@ class Grid:
                 return True
         return False
 
-    def get_adjacent_edges(self, node):
-        """Returns the list of edges node is a source of."""
+    def get_adjacent_nodes(self, node):
+        """Returns the list of targets node points to."""
         adjacents = []
         for edge in self.edges:
             if edge.src_node == node:
@@ -79,11 +81,50 @@ def find_path_a_star(grid, start, goal):
     Find the shortest path between two nodes with the A* algorithm.
     """
     p_queue = [start]
+    traveled_nodes = []
+    g_scores = {start: 0}
+    f_scores = {start: node_distance(start, goal)}
+    predecessor_nodes = {}
     while len(p_queue) > 0:
-        pass
+        candidate = _find_min_f_score(f_scores, p_queue)
+        if candidate == goal:
+            return _show_path(predecessor_nodes, goal)
+
+        p_queue.remove(candidate)
+        traveled_nodes.append(candidate)
+        asdf = [n for n in grid.get_adjacent_nodes(candidate) if n not in traveled_nodes]
+        for adjacent in asdf:
+            estimated_g_score = g_scores[candidate] + node_distance(candidate, adjacent)
+            if adjacent in g_scores and estimated_g_score >= g_scores[adjacent]:
+                continue
+
+            p_queue.append(adjacent)
+            predecessor_nodes[adjacent] = candidate
+            g_scores[adjacent] = estimated_g_score
+            f_scores[adjacent] = estimated_g_score + node_distance(adjacent, goal)
+    return "No path found"
+
+def _find_min_f_score(f_scores, node_queue):
+    filtered_node_list = filter(lambda x: x in node_queue, f_scores)
+    return min(filtered_node_list)
+
+def _show_path(predecessors, target):
+    path = [target]
+    while target in predecessors:
+        target = predecessors[target]
+        path.append(target)
+    return path
+
+def grid_with_path(grid, path):
+    for node in path:
+        x, y = node
+        grid.grid_layout[x][y] = 'X'
+    print(grid)
 
 
 our_grid = Grid(10, 10)
 our_grid = create_uniform_edges(our_grid)
-print(our_grid.get_adjacent_edges((4, 3)))
-print(node_distance((0, 0), (9, 0)))
+a_star_path = find_path_a_star(our_grid, (0,0), (8,7))
+
+print(a_star_path)
+print(grid_with_path(our_grid, a_star_path))
